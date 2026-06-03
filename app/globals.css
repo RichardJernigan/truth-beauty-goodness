@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f5f3ef;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Hide scrollbar on the horizontal-scroll canvas wrapper for a clean look */
+.canvas-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.canvas-scroll::-webkit-scrollbar {
+  display: none;
+}
