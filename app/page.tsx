@@ -6,13 +6,17 @@ interface Chip { id: string; text: string; x: number; y: number }
 
 // ─── Design-space constants ───────────────────────────────────────────────────
 const LW = 900   // logical canvas width
-const LH = 720   // logical canvas height
+const LH = 864   // logical canvas height (20 % taller than circles for instruction text)
 const MIN_SCALE = 0.65   // floor for narrow phones (horizontal scroll below this)
 const V_OVERHEAD = 200   // px reserved for title + form + margins (fixed, not scaled)
 
-const T = { cx: 290, cy: 262, r: 188 }
-const B = { cx: 580, cy: 262, r: 188 }
-const G = { cx: 435, cy: 470, r: 188 }
+// Circles shifted down 144 px (= 20 % of old LH) to make room for instruction text above
+const T = { cx: 290, cy: 406, r: 188 }
+const B = { cx: 580, cy: 406, r: 188 }
+const G = { cx: 435, cy: 614, r: 188 }
+
+// Top of T/B circles in design space — instruction text lives in [0, INSTR_TOP)
+const INSTR_TOP = 218   // = cy(406) − r(188)
 
 // ─── Scale formula ────────────────────────────────────────────────────────────
 // byWidth  = how much we can scale before overflowing viewport width
@@ -28,29 +32,30 @@ function computeScale(vw: number, vh: number) {
 }
 
 // ─── Default chip positions ───────────────────────────────────────────────────
+// All y values shifted down 144 px to match the new circle positions.
 // 42-px vertical gaps so chips don't overlap at MIN_SCALE (0.65 × 42 = 27 px > chip height)
 const DEFAULTS: Chip[] = [
   // — Truth —
-  { id: 't1', text: 'Facts',              x: 118, y: 163 },
-  { id: 't2', text: 'Scientific inquiry', x: 100, y: 205 },
-  { id: 't3', text: 'Honesty',            x: 128, y: 247 },
-  { id: 't4', text: 'Integrity',          x: 118, y: 289 },
-  { id: 't5', text: 'Intelligence',       x: 112, y: 323 },
+  { id: 't1', text: 'Facts',              x: 118, y: 307 },
+  { id: 't2', text: 'Scientific inquiry', x: 100, y: 349 },
+  { id: 't3', text: 'Honesty',            x: 128, y: 391 },
+  { id: 't4', text: 'Integrity',          x: 118, y: 433 },
+  { id: 't5', text: 'Intelligence',       x: 112, y: 467 },
   // — Beauty —
-  { id: 'b1', text: 'Harmony',              x: 666, y: 163 },
-  { id: 'b2', text: 'Aesthetic perception', x: 660, y: 205 },
-  { id: 'b3', text: 'Visceral response',    x: 663, y: 247 },
-  { id: 'b4', text: 'Heroic narrative',     x: 663, y: 289 },
+  { id: 'b1', text: 'Harmony',              x: 666, y: 307 },
+  { id: 'b2', text: 'Aesthetic perception', x: 660, y: 349 },
+  { id: 'b3', text: 'Visceral response',    x: 663, y: 391 },
+  { id: 'b4', text: 'Heroic narrative',     x: 663, y: 433 },
   // — Truth + Beauty overlap —
-  { id: 'tb1', text: 'Story telling', x: 398, y: 172 },
+  { id: 'tb1', text: 'Story telling', x: 398, y: 316 },
   // — Triple overlap —
-  { id: 'c1', text: 'Justice',       x: 412, y: 342 },
-  { id: 'c2', text: 'Understanding', x: 400, y: 384 },
+  { id: 'c1', text: 'Justice',       x: 412, y: 486 },
+  { id: 'c2', text: 'Understanding', x: 400, y: 528 },
   // — Goodness —
-  { id: 'g1', text: 'Kindness',   x: 382, y: 514 },
-  { id: 'g2', text: 'Compassion', x: 366, y: 556 },
-  { id: 'g3', text: 'Empathy',    x: 382, y: 598 },
-  { id: 'g4', text: 'Tolerance',  x: 368, y: 636 },
+  { id: 'g1', text: 'Kindness',   x: 382, y: 658 },
+  { id: 'g2', text: 'Compassion', x: 366, y: 700 },
+  { id: 'g3', text: 'Empathy',    x: 382, y: 742 },
+  { id: 'g4', text: 'Tolerance',  x: 368, y: 780 },
 ]
 
 const useIsomorphicLayoutEffect =
@@ -211,6 +216,35 @@ export default function Page() {
             <text x={B.cx} y={B.cy} textAnchor="middle" dominantBaseline="middle" fill="#3a8050" fontSize="18" fontWeight="700" letterSpacing="6" opacity="0.60">BEAUTY</text>
             <text x={G.cx} y={G.cy} textAnchor="middle" dominantBaseline="middle" fill="#6040a0" fontSize="18" fontWeight="700" letterSpacing="6" opacity="0.60">GOODNESS</text>
           </svg>
+
+          {/* Instruction text — sits in the 218 design-unit space above the circles */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: Math.round(INSTR_TOP * scale),
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: `${Math.round(18 * scale)}px ${Math.round(52 * scale)}px`,
+              pointerEvents: 'none',
+              zIndex: 1,
+            }}
+          >
+            <p style={{
+              margin: 0,
+              fontSize: clamp(10, Math.round(12 * scale), 20),
+              lineHeight: 1.7,
+              color: '#a898b2',
+              textAlign: 'center',
+              fontWeight: 400,
+              letterSpacing: '0.01em',
+            }}>
+              Think about the three words: Truth, Beauty, and Goodness. What words, phrases, or concepts do you associate with each of these? Type in your words or phrases. Each will be placed in the center. Move them around based on how much they relate (or don&apos;t relate) to the main three concepts and to each other.
+            </p>
+          </div>
 
           {chips.map(chip => (
             <ChipEl
