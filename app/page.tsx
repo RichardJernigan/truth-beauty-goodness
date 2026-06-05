@@ -189,8 +189,10 @@ export default function Page() {
   const formPadH   = clamp(18, Math.round(22  * scale), 40)
   const hintSize   = clamp(10, Math.round(11  * scale), 17)
 
-  // True when the canvas is wider than the viewport — needs horizontal scroll
-  const needsHScroll = typeof window !== 'undefined' && cw > window.innerWidth - 32
+  // Horizontal scroll is needed only when scale was clamped to MIN_SCALE
+  // (viewport too narrow to fit the canvas). Derived from scale so no window
+  // access happens during render — prevents the SSR/client hydration mismatch.
+  const needsHScroll = scale <= MIN_SCALE + 0.01
 
   return (
     <main style={{
