@@ -69,7 +69,8 @@ export default function Page() {
   const [input, setInput]  = useState('')
   const [scale, setScale]  = useState(1)
   const canvasRef  = useRef<HTMLDivElement>(null)
-  const drag       = useRef<{ id: string; ox: number; oy: number } | null>(null)
+  // pointerId is stored so secondary touch points are ignored during an active drag
+  const drag       = useRef<{ id: string; ox: number; oy: number; pointerId: number } | null>(null)
   const scaleRef   = useRef(scale)
   useEffect(() => { scaleRef.current = scale }, [scale])
 
@@ -89,31 +90,57 @@ export default function Page() {
     localStorage.setItem('tbg-chips', JSON.stringify(chips))
   }, [chips])
 
-  // Drag — offset computed from the chip's exact design-space position, not from
-  // getBoundingClientRect, which includes Math.round rounding and can shift after
-  // the dragging state triggers a CSS scale change on the element.
+  // Global safety net: if a pointerup or pointercancel escapes the chip element
+  // (e.g. the browser moves focus away mid-drag), always clean up drag state.
+  useEffect(() => {
+    const release = () => { drag.current = null }
+    window.addEventListener('pointerup',     release, { capture: true })
+    window.addEventListener('pointercancel', release, { capture: true })
+    return () => {
+      window.removeEventListener('pointerup',     release, { capture: true })
+      window.removeEventListener('pointercancel', release, { capture: true })
+    }
+  }, [])
+
+  // Drag — all handlers wrapped in try/catch so a mid-drag error can never
+  // crash the app. Drag state is always cleaned up before rethrowing nothing.
   const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>, id: string, chipX: number, chipY: number) => {
-    e.preventDefault()
-    const el = e.currentTarget
-    el.setPointerCapture(e.pointerId)
-    const cr = canvasRef.current!.getBoundingClientRect()
-    const s = scaleRef.current
-    drag.current = {
-      id,
-      ox: (e.clientX - cr.left) / s - chipX,
-      oy: (e.clientY - cr.top) / s - chipY,
+    try {
+      // Ignore secondary touch points while a drag is already active
+      if (drag.current) return
+      e.preventDefault()
+      try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* non-fatal */ }
+      const canvas = canvasRef.current
+      if (!canvas) return
+      const cr = canvas.getBoundingClientRect()
+      const s = scaleRef.current || 1
+      drag.current = {
+        id,
+        pointerId: e.pointerId,
+        ox: (e.clientX - cr.left) / s - chipX,
+        oy: (e.clientY - cr.top) / s - chipY,
+      }
+    } catch {
+      drag.current = null
     }
   }, [])
 
   const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>, id: string) => {
-    if (!drag.current || drag.current.id !== id) return
-    const cr = canvasRef.current!.getBoundingClientRect()
-    const s = scaleRef.current
-    setChips(prev => prev.map(c =>
-      c.id === id
-        ? { ...c, x: (e.clientX - cr.left) / s - drag.current!.ox, y: (e.clientY - cr.top) / s - drag.current!.oy }
-        : c
-    ))
+    try {
+      // Capture into a local so the setChips updater never reads drag.current —
+      // onPointerUp could null it out between this point and when React runs the updater.
+      const d = drag.current
+      if (!d || d.id !== id || d.pointerId !== e.pointerId) return
+      const canvas = canvasRef.current
+      if (!canvas) return
+      const cr = canvas.getBoundingClientRect()
+      const s = scaleRef.current || 1
+      const newX = (e.clientX - cr.left) / s - d.ox
+      const newY = (e.clientY - cr.top) / s - d.oy
+      setChips(prev => prev.map(c => c.id === id ? { ...c, x: newX, y: newY } : c))
+    } catch {
+      drag.current = null
+    }
   }, [])
 
   const onPointerUp = useCallback(() => { drag.current = null }, [])
@@ -373,10 +400,10 @@ function ChipEl({ chip, scale, onPointerDown, onPointerMove, onPointerUp, onRemo
   return (
     <div
       data-chip
-      onPointerDown={e => { setDragging(true); onPointerDown(e, chip.id, chip.x, chip.y) }}
-      onPointerMove={e => onPointerMove(e, chip.id)}
-      onPointerUp={() => { setDragging(false); onPointerUp() }}
-      onPointerCancel={() => { setDragging(false); onPointerUp() }}
+      onPointerDown={e => { try { setDragging(true); onPointerDown(e, chip.id, chip.x, chip.y) } catch { setDragging(false) } }}
+      onPointerMove={e => { try { onPointerMove(e, chip.id) } catch { /* non-fatal */ } }}
+      onPointerUp={() => { try { setDragging(false); onPointerUp() } finally { setDragging(false) } }}
+      onPointerCancel={() => { try { setDragging(false); onPointerUp() } finally { setDragging(false) } }}
       style={{
         position:  'absolute',
         left:  0,
