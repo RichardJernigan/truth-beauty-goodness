@@ -31,32 +31,7 @@ function computeScale(vw: number, vh: number) {
   return Math.max(MIN_SCALE, Math.min(byWidth, Math.max(byHeight, 1)))
 }
 
-// ─── Default chip positions ───────────────────────────────────────────────────
-// All y values shifted down 144 px to match the new circle positions.
-// 42-px vertical gaps so chips don't overlap at MIN_SCALE (0.65 × 42 = 27 px > chip height)
-const DEFAULTS: Chip[] = [
-  // — Truth —
-  { id: 't1', text: 'Facts',              x: 118, y: 307 },
-  { id: 't2', text: 'Scientific inquiry', x: 100, y: 349 },
-  { id: 't3', text: 'Honesty',            x: 128, y: 391 },
-  { id: 't4', text: 'Integrity',          x: 118, y: 433 },
-  { id: 't5', text: 'Intelligence',       x: 112, y: 467 },
-  // — Beauty —
-  { id: 'b1', text: 'Harmony',              x: 666, y: 307 },
-  { id: 'b2', text: 'Aesthetic perception', x: 660, y: 349 },
-  { id: 'b3', text: 'Visceral response',    x: 663, y: 391 },
-  { id: 'b4', text: 'Heroic narrative',     x: 663, y: 433 },
-  // — Truth + Beauty overlap —
-  { id: 'tb1', text: 'Story telling', x: 398, y: 316 },
-  // — Triple overlap —
-  { id: 'c1', text: 'Justice',       x: 412, y: 486 },
-  { id: 'c2', text: 'Understanding', x: 400, y: 528 },
-  // — Goodness —
-  { id: 'g1', text: 'Kindness',   x: 382, y: 658 },
-  { id: 'g2', text: 'Compassion', x: 366, y: 700 },
-  { id: 'g3', text: 'Empathy',    x: 382, y: 742 },
-  { id: 'g4', text: 'Tolerance',  x: 368, y: 780 },
-]
+// New users start with an empty canvas — no sample chips.
 
 const useIsomorphicLayoutEffect =
   typeof window !== 'undefined' ? useLayoutEffect : useEffect
@@ -65,14 +40,24 @@ const clamp = (min: number, v: number, max: number) => Math.min(max, Math.max(mi
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function Page() {
-  const [chips, setChips] = useState<Chip[]>(DEFAULTS)
-  const [input, setInput]  = useState('')
-  const [scale, setScale]  = useState(1)
+  const [chips, setChips]     = useState<Chip[]>([])
+  const [input, setInput]     = useState('')
+  const [scale, setScale]     = useState(1)
+  const [historyLen, setHistoryLen] = useState(0)   // drives Undo button enabled state
+
   const canvasRef  = useRef<HTMLDivElement>(null)
-  // pointerId is stored so secondary touch points are ignored during an active drag
-  const drag       = useRef<{ id: string; ox: number; oy: number; pointerId: number } | null>(null)
-  const scaleRef   = useRef(scale)
+  const chipsRef   = useRef<Chip[]>([])             // always mirrors chips state
+  const historyRef = useRef<Chip[][]>([])           // up to 20 snapshots
+
+  // pointerId tracks which touch is dragging; preSnapshot is the chips state
+  // at drag-start so we can push it to history only if the chip actually moved.
+  const drag = useRef<{
+    id: string; ox: number; oy: number; pointerId: number; preSnapshot: Chip[]
+  } | null>(null)
+
+  const scaleRef = useRef(scale)
   useEffect(() => { scaleRef.current = scale }, [scale])
+  useEffect(() => { chipsRef.current = chips },  [chips])
 
   // Responsive scale — runs before paint, no layout flash
   useIsomorphicLayoutEffect(() => {
@@ -89,6 +74,24 @@ export default function Page() {
   useEffect(() => {
     localStorage.setItem('tbg-chips', JSON.stringify(chips))
   }, [chips])
+
+  // ─── Undo history ────────────────────────────────────────────────────────────
+  // Push a snapshot onto the history stack (max 20 entries).
+  // Uses refs so the callback is stable and never causes extra re-renders.
+  const pushHistory = useCallback((snapshot: Chip[]) => {
+    const next = [...historyRef.current, snapshot].slice(-20)
+    historyRef.current = next
+    setHistoryLen(next.length)
+  }, [])
+
+  const undo = useCallback(() => {
+    const h = historyRef.current
+    if (!h.length) return
+    const snapshot = h[h.length - 1]
+    historyRef.current = h.slice(0, -1)
+    setHistoryLen(h.length - 1)
+    setChips(snapshot)
+  }, [])
 
   // Global safety net: if a pointerup or pointercancel escapes the chip element
   // (e.g. the browser moves focus away mid-drag), always clean up drag state.
@@ -119,6 +122,7 @@ export default function Page() {
         pointerId: e.pointerId,
         ox: (e.clientX - cr.left) / s - chipX,
         oy: (e.clientY - cr.top) / s - chipY,
+        preSnapshot: [...chipsRef.current],   // snapshot for undo if chip moves
       }
     } catch {
       drag.current = null
@@ -143,23 +147,37 @@ export default function Page() {
     }
   }, [])
 
-  const onPointerUp = useCallback(() => { drag.current = null }, [])
+  const onPointerUp = useCallback(() => {
+    const d = drag.current
+    drag.current = null
+    if (!d) return
+    // Only push history when the chip actually moved — avoids wasting undo slots on taps
+    const after  = chipsRef.current.find(c => c.id === d.id)
+    const before = d.preSnapshot.find(c => c.id === d.id)
+    if (after && before && (Math.abs(after.x - before.x) > 2 || Math.abs(after.y - before.y) > 2)) {
+      const next = [...historyRef.current, d.preSnapshot].slice(-20)
+      historyRef.current = next
+      setHistoryLen(next.length)
+    }
+  }, [])
 
   const removeChip = useCallback((e: React.MouseEvent, id: string) => {
     e.stopPropagation()
+    pushHistory(chipsRef.current)
     setChips(prev => prev.filter(c => c.id !== id))
-  }, [])
+  }, [pushHistory])
 
   const addChip = (e: React.FormEvent) => {
     e.preventDefault()
     const text = input.trim()
     if (!text) return
+    pushHistory(chipsRef.current)
     // Place new chips in the open white space to the right of the circles
     setChips(prev => [...prev, { id: `u${Date.now()}`, text, x: Math.round(LW * 0.9), y: Math.round(LH * 0.5) }])
     setInput('')
   }
 
-  const reset = () => { setChips(DEFAULTS); localStorage.removeItem('tbg-chips') }
+  const reset = () => { pushHistory(chipsRef.current); setChips([]) }
 
   const cw = Math.round(LW * scale)
   const ch = Math.round(LH * scale)
@@ -338,6 +356,25 @@ export default function Page() {
           }}
         >
           Add
+        </button>
+        <button
+          type="button"
+          onClick={undo}
+          disabled={historyLen === 0}
+          style={{
+            flexShrink: 0,
+            background: 'none',
+            color: historyLen > 0 ? '#9b8ea0' : '#ddd',
+            border: `1.5px solid ${historyLen > 0 ? '#c8bdd0' : '#ece8f0'}`,
+            borderRadius: 999,
+            padding: `${formPadV - 1}px ${Math.round(formPadH * 0.7)}px`,
+            fontSize: Math.round(formFont * 0.9),
+            cursor: historyLen > 0 ? 'pointer' : 'default',
+            WebkitTapHighlightColor: 'transparent',
+            transition: 'color 0.15s, border-color 0.15s',
+          }}
+        >
+          Undo
         </button>
         <button
           type="button"
