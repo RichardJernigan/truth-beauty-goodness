@@ -84,14 +84,20 @@ export default function Page() {
     localStorage.setItem('tbg-chips', JSON.stringify(chips))
   }, [chips])
 
-  // Drag — offsets stored in design-space coords so they survive viewport resize
-  const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>, id: string) => {
+  // Drag — offset computed from the chip's exact design-space position, not from
+  // getBoundingClientRect, which includes Math.round rounding and can shift after
+  // the dragging state triggers a CSS scale change on the element.
+  const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>, id: string, chipX: number, chipY: number) => {
     e.preventDefault()
     const el = e.currentTarget
     el.setPointerCapture(e.pointerId)
-    const rect = el.getBoundingClientRect()
+    const cr = canvasRef.current!.getBoundingClientRect()
     const s = scaleRef.current
-    drag.current = { id, ox: (e.clientX - rect.left) / s, oy: (e.clientY - rect.top) / s }
+    drag.current = {
+      id,
+      ox: (e.clientX - cr.left) / s - chipX,
+      oy: (e.clientY - cr.top) / s - chipY,
+    }
   }, [])
 
   const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>, id: string) => {
@@ -310,7 +316,7 @@ export default function Page() {
 interface ChipElProps {
   chip:         Chip
   scale:        number
-  onPointerDown: (e: React.PointerEvent<HTMLDivElement>, id: string) => void
+  onPointerDown: (e: React.PointerEvent<HTMLDivElement>, id: string, x: number, y: number) => void
   onPointerMove: (e: React.PointerEvent<HTMLDivElement>, id: string) => void
   onPointerUp:  () => void
   onRemove:     (e: React.MouseEvent, id: string) => void
@@ -333,7 +339,7 @@ function ChipEl({ chip, scale, onPointerDown, onPointerMove, onPointerUp, onRemo
   return (
     <div
       data-chip
-      onPointerDown={e => { setDragging(true);  onPointerDown(e, chip.id) }}
+      onPointerDown={e => { setDragging(true); onPointerDown(e, chip.id, chip.x, chip.y) }}
       onPointerMove={e => onPointerMove(e, chip.id)}
       onPointerUp={() => { setDragging(false); onPointerUp() }}
       onPointerCancel={() => { setDragging(false); onPointerUp() }}
@@ -360,8 +366,7 @@ function ChipEl({ chip, scale, onPointerDown, onPointerMove, onPointerUp, onRemo
         touchAction: 'none',    // stops browser scroll-hijack during drag
         whiteSpace: 'nowrap',
         zIndex:    dragging ? 100 : 10,
-        scale:     dragging ? '1.04' : '1',
-        transition: 'box-shadow 0.12s, scale 0.12s',
+        transition: 'box-shadow 0.12s',
         WebkitTapHighlightColor: 'transparent',
       }}
     >
