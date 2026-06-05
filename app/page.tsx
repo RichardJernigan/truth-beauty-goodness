@@ -154,7 +154,8 @@ export default function Page() {
     e.preventDefault()
     const text = input.trim()
     if (!text) return
-    setChips(prev => [...prev, { id: `u${Date.now()}`, text, x: LW / 2 - 50, y: LH / 2 - 16 }])
+    // Place new chips in the open white space to the right of the circles
+    setChips(prev => [...prev, { id: `u${Date.now()}`, text, x: Math.round(LW * 0.9), y: Math.round(LH * 0.5) }])
     setInput('')
   }
 
