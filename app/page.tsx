@@ -58,6 +58,7 @@ export default function Page() {
   const scaleRef = useRef(scale)
   useEffect(() => { scaleRef.current = scale }, [scale])
   useEffect(() => { chipsRef.current = chips },  [chips])
+  useEffect(() => { canvasRef.current?.focus() }, [])
 
   // Responsive scale — runs before paint, no layout flash
   useIsomorphicLayoutEffect(() => {
@@ -232,6 +233,7 @@ export default function Page() {
         <div
           ref={canvasRef}
           data-canvas
+          tabIndex={0}
           style={{
             position: 'relative',
             marginInline: 'auto',
