@@ -58,17 +58,6 @@ export default function Page() {
   const scaleRef = useRef(scale)
   useEffect(() => { scaleRef.current = scale }, [scale])
   useEffect(() => { chipsRef.current = chips },  [chips])
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (!(e.metaKey || e.ctrlKey) || e.key !== 'z') return
-      const tag = (e.target as HTMLElement)?.tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return
-      e.preventDefault()
-      undo()
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [undo])
 
   // Responsive scale — runs before paint, no layout flash
   useIsomorphicLayoutEffect(() => {
@@ -103,6 +92,18 @@ export default function Page() {
     setHistoryLen(h.length - 1)
     setChips(snapshot)
   }, [])
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.key !== 'z') return
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      e.preventDefault()
+      undo()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [undo])
 
   // Global safety net: if a pointerup or pointercancel escapes the chip element
   // (e.g. the browser moves focus away mid-drag), always clean up drag state.
