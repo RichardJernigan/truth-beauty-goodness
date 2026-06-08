@@ -309,7 +309,7 @@ export default function Page() {
               fontWeight: 400,
               letterSpacing: '0.01em',
             }}>
-              Think about the three words: Truth, Beauty, and Goodness. What words, phrases, or concepts do you associate with each of these? Type in your words or phrases. Each will be placed in the center. Move them around based on how much they relate (or don&apos;t relate) to the main three concepts and to each other.
+              Think about the three words: Truth, Beauty, and Goodness. What words, phrases, or concepts do you associate with each of these? Type in your words or phrases. Each will be placed outside the diagram. Move them around based on how much they relate (or don&apos;t relate) to the main three concepts and to each other.
             </p>
           </div>
 
