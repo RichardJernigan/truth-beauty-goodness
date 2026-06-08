@@ -57,6 +57,22 @@ export default function Page() {
 
   const undoRef  = useRef<() => void>(() => {})
   const scaleRef = useRef(scale)
+
+  useEffect(() => { canvasRef.current?.focus() }, [])
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      console.log('key pressed', e.key, e.metaKey)
+      if (!(e.metaKey || e.ctrlKey) || e.key !== 'z') return
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      e.preventDefault()
+      undoRef.current?.()
+    }
+    document.addEventListener('keydown', handler, true)
+    return () => document.removeEventListener('keydown', handler, true)
+  }, [])
+
   useEffect(() => { scaleRef.current = scale }, [scale])
   useEffect(() => { chipsRef.current = chips },  [chips])
 
@@ -94,30 +110,6 @@ export default function Page() {
     setChips(snapshot)
   }, [])
   undoRef.current = undo
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (!(e.metaKey || e.ctrlKey) || e.key !== 'z') return
-      const tag = (e.target as HTMLElement)?.tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return
-      e.preventDefault()
-      undoRef.current()
-    }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [])
-
-  // Global safety net: if a pointerup or pointercancel escapes the chip element
-  // (e.g. the browser moves focus away mid-drag), always clean up drag state.
-  useEffect(() => {
-    const release = () => { drag.current = null }
-    window.addEventListener('pointerup',     release, { capture: true })
-    window.addEventListener('pointercancel', release, { capture: true })
-    return () => {
-      window.removeEventListener('pointerup',     release, { capture: true })
-      window.removeEventListener('pointercancel', release, { capture: true })
-    }
-  }, [])
 
   // Drag — all handlers wrapped in try/catch so a mid-drag error can never
   // crash the app. Drag state is always cleaned up before rethrowing nothing.
@@ -173,7 +165,19 @@ export default function Page() {
       historyRef.current = next
       setHistoryLen(next.length)
     }
+    canvasRef.current?.focus()
   }, [])
+
+  // Global safety net: if a pointerup or pointercancel escapes the chip element
+  // (e.g. the browser moves focus away mid-drag), always clean up drag state.
+  useEffect(() => {
+    window.addEventListener('pointerup',     onPointerUp, { capture: true })
+    window.addEventListener('pointercancel', onPointerUp, { capture: true })
+    return () => {
+      window.removeEventListener('pointerup',     onPointerUp, { capture: true })
+      window.removeEventListener('pointercancel', onPointerUp, { capture: true })
+    }
+  }, [onPointerUp])
 
   const removeChip = useCallback((e: React.MouseEvent, id: string) => {
     e.stopPropagation()
@@ -246,6 +250,7 @@ export default function Page() {
         <div
           ref={canvasRef}
           data-canvas
+          tabIndex={0}
           style={{
             position: 'relative',
             marginInline: 'auto',
