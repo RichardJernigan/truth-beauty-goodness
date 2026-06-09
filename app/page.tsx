@@ -190,8 +190,8 @@ export default function Page() {
     const text = input.trim()
     if (!text) return
     pushHistory(chipsRef.current)
-    // Place new chips in the open white space to the right of the circles
-    setChips(prev => [...prev, { id: `u${Date.now()}`, text, x: Math.round(LW * 0.9), y: Math.round(LH * 0.5) }])
+    // Place new chips just below the bottom circle, centered — always visible on any screen size
+    setChips(prev => [...prev, { id: `u${Date.now()}`, text, x: Math.round(LW * 0.5), y: Math.round(G.cy + G.r + 24) }])
     setInput('')
   }
 
