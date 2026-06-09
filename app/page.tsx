@@ -185,8 +185,7 @@ export default function Page() {
     setChips(prev => prev.filter(c => c.id !== id))
   }, [pushHistory])
 
-  const addChip = (e: React.FormEvent) => {
-    e.preventDefault()
+  const commitChip = useCallback(() => {
     const text = input.trim()
     if (!text) return
     pushHistory(chipsRef.current)
@@ -195,6 +194,11 @@ export default function Page() {
     console.log('placing chip at', { x: chipX, y: chipY })
     setChips(prev => [...prev, { id: `u${Date.now()}`, text, x: chipX, y: chipY }])
     setInput('')
+  }, [input, pushHistory])
+
+  const addChip = (e: React.FormEvent) => {
+    e.preventDefault()
+    commitChip()
   }
 
   const reset = () => { pushHistory(chipsRef.current); setChips([]) }
@@ -365,6 +369,7 @@ export default function Page() {
         />
         <button
           type="submit"
+          onClick={commitChip}
           style={{
             flexShrink: 0,
             background: '#9070c0',
