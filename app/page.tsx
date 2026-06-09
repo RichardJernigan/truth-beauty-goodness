@@ -190,9 +190,9 @@ export default function Page() {
     const text = input.trim()
     if (!text) return
     pushHistory(chipsRef.current)
-    const chipX = Math.round(LW * 0.9)
-    const chipY = Math.round(LH * 0.45)
-    // Place new chips at 90% width, 45% height — visible on all screen sizes including iPad
+    const chipX = Math.round(LW * 0.75)
+    const chipY = Math.round(LH * 0.35)
+    console.log('placing chip at', { x: chipX, y: chipY })
     setChips(prev => [...prev, { id: `u${Date.now()}`, text, x: chipX, y: chipY }])
     setInput('')
   }
