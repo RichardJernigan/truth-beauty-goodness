@@ -190,8 +190,8 @@ export default function Page() {
     const text = input.trim()
     if (!text) return
     pushHistory(chipsRef.current)
-    const chipX = 750
-    const chipY = 750
+    const chipX = 625
+    const chipY = 625
     console.log('placing chip at', { x: chipX, y: chipY })
     setChips(prev => [...prev, { id: `u${Date.now()}`, text, x: chipX, y: chipY }])
     setInput('')
