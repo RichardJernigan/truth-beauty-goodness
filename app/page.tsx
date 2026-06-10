@@ -191,7 +191,8 @@ export default function Page() {
     pushHistory(chipsRef.current)
     const chipX = 635
     const chipY = 650
-    console.log('placing chip at', { x: chipX, y: chipY })
+    const canvas = canvasRef.current
+    console.log('placing chip at', { x: chipX, y: chipY }, 'canvas px', { w: canvas?.offsetWidth, h: canvas?.offsetHeight }, 'scale', scaleRef.current, 'rendered px', { x: Math.round(chipX * scaleRef.current), y: Math.round(chipY * scaleRef.current) })
     setChips(prev => [...prev, { id: `u${Date.now()}`, text, x: chipX, y: chipY }])
     setInput('')
   }, [input, pushHistory])
