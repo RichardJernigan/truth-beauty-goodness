@@ -189,8 +189,8 @@ export default function Page() {
     const text = input.trim()
     if (!text) return
     pushHistory(chipsRef.current)
-    const chipX = 450
-    const chipY = 450
+    const chipX = 635
+    const chipY = 650
     const canvas = canvasRef.current
     console.log('placing chip at', { x: chipX, y: chipY }, 'canvas px', { w: canvas?.offsetWidth, h: canvas?.offsetHeight }, 'scale', scaleRef.current, 'rendered px', { x: Math.round(chipX * scaleRef.current), y: Math.round(chipY * scaleRef.current) })
     setChips(prev => [...prev, { id: `u${Date.now()}`, text, x: chipX, y: chipY }])
