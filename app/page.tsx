@@ -89,7 +89,7 @@ export default function Page() {
     try { const s = localStorage.getItem('tbg-chips'); if (s) setChips(JSON.parse(s)) } catch {}
   }, [])
   useEffect(() => {
-    localStorage.setItem('tbg-chips', JSON.stringify(chips))
+    try { localStorage.setItem('tbg-chips', JSON.stringify(chips)) } catch {}
   }, [chips])
 
   // ─── Undo history ────────────────────────────────────────────────────────────
