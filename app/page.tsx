@@ -19,44 +19,84 @@ const G = { cx: 435, cy: 614, r: 188 }
 const INSTR_TOP = 218   // = cy(406) − r(188)
 
 // ─── Scale formula ────────────────────────────────────────────────────────────
-// byWidth  = how much we can scale before overflowing viewport width
-// byHeight = how much we can scale before overflowing viewport height
-//
-// Rule: scale up freely when height allows (≥ 920 px viewport, i.e. byHeight ≥ 1).
-//       On short screens (laptops, phones) keep design-space size (cap = 1).
-//       Always respect MIN_SCALE floor so narrow phones get a horizontal scroll.
 function computeScale(vw: number, vh: number) {
   const byWidth  = (vw - 32) / LW
   const byHeight = (vh - V_OVERHEAD) / LH
   return Math.max(MIN_SCALE, Math.min(byWidth, Math.max(byHeight, 1)))
 }
 
-// New users start with an empty canvas — no sample chips.
-
 const useIsomorphicLayoutEffect =
   typeof window !== 'undefined' ? useLayoutEffect : useEffect
 
 const clamp = (min: number, v: number, max: number) => Math.min(max, Math.max(min, v))
+
+// ─── Translations ─────────────────────────────────────────────────────────────
+type Lang = 'en' | 'es' | 'fr' | 'pt'
+
+const LANGS: { code: Lang; label: string }[] = [
+  { code: 'en', label: 'English' },
+  { code: 'es', label: 'Español' },
+  { code: 'fr', label: 'Français' },
+  { code: 'pt', label: 'Português' },
+]
+
+const T_STRINGS: Record<Lang, {
+  instruction: string
+  truth: string; beauty: string; goodness: string
+  placeholder: string
+  add: string; undo: string; reset: string
+  hint: string
+}> = {
+  en: {
+    instruction: "Think about the three words: Truth, Beauty, and Goodness. What words, phrases, or concepts do you associate with each of these? Type in your words or phrases. Each will be placed outside the diagram. Move them around based on how much they relate (or don't relate) to the main three concepts and to each other.",
+    truth: 'TRUTH', beauty: 'BEAUTY', goodness: 'GOODNESS',
+    placeholder: 'Add a word or phrase…',
+    add: 'Add', undo: 'Undo', reset: 'Reset',
+    hint: 'Drag chips freely · tap × to remove',
+  },
+  es: {
+    instruction: "Piensa en las tres palabras: Verdad, Belleza y Bondad. ¿Qué palabras, frases o conceptos asocias con cada una de ellas? Escribe tus palabras o frases. Cada una se colocará fuera del diagrama. Muévelas según se relacionen (o no) con los tres conceptos principales y entre sí.",
+    truth: 'VERDAD', beauty: 'BELLEZA', goodness: 'BONDAD',
+    placeholder: 'Añade una palabra o frase...',
+    add: 'Añadir', undo: 'Deshacer', reset: 'Reiniciar',
+    hint: 'Arrastra libremente · toca × para eliminar',
+  },
+  fr: {
+    instruction: "Pensez aux trois mots : Vérité, Beauté et Bonté. Quels mots, phrases ou concepts associez-vous à chacun d'eux ? Tapez vos mots ou phrases. Chacun sera placé en dehors du diagramme. Déplacez-les selon leur lien (ou non) avec les trois concepts principaux et entre eux.",
+    truth: 'VÉRITÉ', beauty: 'BEAUTÉ', goodness: 'BONTÉ',
+    placeholder: 'Ajoutez un mot ou une phrase...',
+    add: 'Ajouter', undo: 'Annuler', reset: 'Réinitialiser',
+    hint: 'Faites glisser · appuyez sur × pour supprimer',
+  },
+  pt: {
+    instruction: "Pense nas três palavras: Verdade, Beleza e Bondade. Que palavras, frases ou conceitos você associa a cada uma delas? Digite suas palavras ou frases. Cada uma será colocada fora do diagrama. Mova-as de acordo com sua relação (ou não) com os três conceitos principais e entre si.",
+    truth: 'VERDADE', beauty: 'BELEZA', goodness: 'BONDADE',
+    placeholder: 'Adicione uma palavra ou frase...',
+    add: 'Adicionar', undo: 'Desfazer', reset: 'Redefinir',
+    hint: 'Arraste livremente · toque × para remover',
+  },
+}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function Page() {
   const [chips, setChips]     = useState<Chip[]>([])
   const [input, setInput]     = useState('')
   const [scale, setScale]     = useState(1)
-  const [historyLen, setHistoryLen] = useState(0)   // drives Undo button enabled state
+  const [historyLen, setHistoryLen] = useState(0)
+  const [lang, setLang]       = useState<Lang>('en')
 
   const canvasRef  = useRef<HTMLDivElement>(null)
-  const chipsRef   = useRef<Chip[]>([])             // always mirrors chips state
-  const historyRef = useRef<Chip[][]>([])           // up to 20 snapshots
+  const chipsRef   = useRef<Chip[]>([])
+  const historyRef = useRef<Chip[][]>([])
 
-  // pointerId tracks which touch is dragging; preSnapshot is the chips state
-  // at drag-start so we can push it to history only if the chip actually moved.
   const drag = useRef<{
     id: string; ox: number; oy: number; pointerId: number; preSnapshot: Chip[]
   } | null>(null)
 
   const undoRef  = useRef<() => void>(() => {})
   const scaleRef = useRef(scale)
+
+  const t = T_STRINGS[lang]
 
   useEffect(() => { canvasRef.current?.focus() }, [])
 
@@ -87,14 +127,18 @@ export default function Page() {
   // localStorage persistence
   useEffect(() => {
     try { const s = localStorage.getItem('tbg-chips'); if (s) setChips(JSON.parse(s)) } catch {}
+    try { const l = localStorage.getItem('tbg-lang'); if (l) setLang(l as Lang) } catch {}
   }, [])
   useEffect(() => {
     try { localStorage.setItem('tbg-chips', JSON.stringify(chips)) } catch {}
   }, [chips])
 
+  const changeLang = (l: Lang) => {
+    setLang(l)
+    try { localStorage.setItem('tbg-lang', l) } catch {}
+  }
+
   // ─── Undo history ────────────────────────────────────────────────────────────
-  // Push a snapshot onto the history stack (max 20 entries).
-  // Uses refs so the callback is stable and never causes extra re-renders.
   const pushHistory = useCallback((snapshot: Chip[]) => {
     const next = [...historyRef.current, snapshot].slice(-20)
     historyRef.current = next
@@ -111,11 +155,9 @@ export default function Page() {
   }, [])
   undoRef.current = undo
 
-  // Drag — all handlers wrapped in try/catch so a mid-drag error can never
-  // crash the app. Drag state is always cleaned up before rethrowing nothing.
+  // Drag handlers
   const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>, id: string, chipX: number, chipY: number) => {
     try {
-      // Ignore secondary touch points while a drag is already active
       if (drag.current) return
       e.preventDefault()
       try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* non-fatal */ }
@@ -128,7 +170,7 @@ export default function Page() {
         pointerId: e.pointerId,
         ox: (e.clientX - cr.left) / s - chipX,
         oy: (e.clientY - cr.top) / s - chipY,
-        preSnapshot: [...chipsRef.current],   // snapshot for undo if chip moves
+        preSnapshot: [...chipsRef.current],
       }
     } catch {
       drag.current = null
@@ -137,8 +179,6 @@ export default function Page() {
 
   const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>, id: string) => {
     try {
-      // Capture into a local so the setChips updater never reads drag.current —
-      // onPointerUp could null it out between this point and when React runs the updater.
       const d = drag.current
       if (!d || d.id !== id || d.pointerId !== e.pointerId) return
       const canvas = canvasRef.current
@@ -157,7 +197,6 @@ export default function Page() {
     const d = drag.current
     drag.current = null
     if (!d) return
-    // Only push history when the chip actually moved — avoids wasting undo slots on taps
     const after  = chipsRef.current.find(c => c.id === d.id)
     const before = d.preSnapshot.find(c => c.id === d.id)
     if (after && before && (Math.abs(after.x - before.x) > 2 || Math.abs(after.y - before.y) > 2)) {
@@ -168,8 +207,7 @@ export default function Page() {
     canvasRef.current?.focus()
   }, [])
 
-  // Global safety net: if a pointerup or pointercancel escapes the chip element
-  // (e.g. the browser moves focus away mid-drag), always clean up drag state.
+  // Global safety net
   useEffect(() => {
     window.addEventListener('pointerup',     onPointerUp, { capture: true })
     window.addEventListener('pointercancel', onPointerUp, { capture: true })
@@ -189,11 +227,7 @@ export default function Page() {
     const text = input.trim()
     if (!text) return
     pushHistory(chipsRef.current)
-    const chipX = 635
-    const chipY = 650
-    const canvas = canvasRef.current
-    console.log('placing chip at', { x: chipX, y: chipY }, 'canvas px', { w: canvas?.offsetWidth, h: canvas?.offsetHeight }, 'scale', scaleRef.current, 'rendered px', { x: Math.round(chipX * scaleRef.current), y: Math.round(chipY * scaleRef.current) })
-    setChips(prev => [...prev, { id: `u${Date.now()}`, text, x: chipX, y: chipY }])
+    setChips(prev => [...prev, { id: `u${Date.now()}`, text, x: 635, y: 650 }])
     setInput('')
   }, [input, pushHistory])
 
@@ -207,16 +241,12 @@ export default function Page() {
   const cw = Math.round(LW * scale)
   const ch = Math.round(LH * scale)
 
-  // Scale-responsive UI sizes — form/title grow with the canvas on large screens
   const titleSize  = clamp(11, Math.round(11  * scale), 20)
   const formFont   = clamp(14, Math.round(15  * scale), 24)
   const formPadV   = clamp(10, Math.round(11  * scale), 18)
   const formPadH   = clamp(18, Math.round(22  * scale), 40)
   const hintSize   = clamp(10, Math.round(11  * scale), 17)
 
-  // Horizontal scroll is needed only when scale was clamped to MIN_SCALE
-  // (viewport too narrow to fit the canvas). Derived from scale so no window
-  // access happens during render — prevents the SSR/client hydration mismatch.
   const needsHScroll = scale <= MIN_SCALE + 0.01
 
   return (
@@ -230,18 +260,52 @@ export default function Page() {
       boxSizing: 'border-box',
     }}>
 
-      <h1 style={{
-        fontSize: titleSize,
-        fontWeight: 600,
-        letterSpacing: '0.32em',
-        textTransform: 'uppercase',
-        color: '#a090aa',
-        marginBottom: Math.round(20 * Math.min(scale, 1.5)),
-        userSelect: 'none',
+      {/* Title row with language selector */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+        maxWidth: Math.min(cw + 32, 900),
         paddingInline: 16,
+        boxSizing: 'border-box',
+        marginBottom: Math.round(20 * Math.min(scale, 1.5)),
+        position: 'relative',
       }}>
-        Truth · Beauty · Goodness
-      </h1>
+        <h1 style={{
+          fontSize: titleSize,
+          fontWeight: 600,
+          letterSpacing: '0.32em',
+          textTransform: 'uppercase',
+          color: '#a090aa',
+          margin: 0,
+          userSelect: 'none',
+          flex: 1,
+          textAlign: 'center',
+        }}>
+          Truth · Beauty · Goodness
+        </h1>
+        <select
+          value={lang}
+          onChange={e => changeLang(e.target.value as Lang)}
+          style={{
+            position: 'absolute',
+            right: 16,
+            fontSize: 12,
+            color: '#a090aa',
+            background: 'none',
+            border: '1px solid #d4cdd8',
+            borderRadius: 6,
+            padding: '3px 6px',
+            cursor: 'pointer',
+            outline: 'none',
+          }}
+        >
+          {LANGS.map(l => (
+            <option key={l.code} value={l.code}>{l.label}</option>
+          ))}
+        </select>
+      </div>
 
       {/* Horizontal scroll wrapper — active only on narrow phones */}
       <div
@@ -285,10 +349,9 @@ export default function Page() {
             <circle cx={T.cx} cy={T.cy} r={T.r} fill="#F08080" fillOpacity={0.22} stroke="#d86464" strokeWidth={1.5} strokeOpacity={0.4} />
             <circle cx={B.cx} cy={B.cy} r={B.r} fill="#8FBC8F" fillOpacity={0.22} stroke="#5a9a5a" strokeWidth={1.5} strokeOpacity={0.4} />
             <circle cx={G.cx} cy={G.cy} r={G.r} fill="#B39DDB" fillOpacity={0.22} stroke="#8060b8" strokeWidth={1.5} strokeOpacity={0.4} />
-            {/* Labels — fontSize in viewBox units, so they scale with the SVG automatically */}
-            <text x={T.cx} y={T.cy} textAnchor="middle" dominantBaseline="middle" fill="#c85858" fontSize="18" fontWeight="700" letterSpacing="6" opacity="0.60">TRUTH</text>
-            <text x={B.cx} y={B.cy} textAnchor="middle" dominantBaseline="middle" fill="#3a8050" fontSize="18" fontWeight="700" letterSpacing="6" opacity="0.60">BEAUTY</text>
-            <text x={G.cx} y={G.cy} textAnchor="middle" dominantBaseline="middle" fill="#6040a0" fontSize="18" fontWeight="700" letterSpacing="6" opacity="0.60">GOODNESS</text>
+            <text x={T.cx} y={T.cy} textAnchor="middle" dominantBaseline="middle" fill="#c85858" fontSize="18" fontWeight="700" letterSpacing="6" opacity="0.60">{t.truth}</text>
+            <text x={B.cx} y={B.cy} textAnchor="middle" dominantBaseline="middle" fill="#3a8050" fontSize="18" fontWeight="700" letterSpacing="6" opacity="0.60">{t.beauty}</text>
+            <text x={G.cx} y={G.cy} textAnchor="middle" dominantBaseline="middle" fill="#6040a0" fontSize="18" fontWeight="700" letterSpacing="6" opacity="0.60">{t.goodness}</text>
           </svg>
 
           {/* Instruction text — sits in the 218 design-unit space above the circles */}
@@ -316,7 +379,7 @@ export default function Page() {
               fontWeight: 400,
               letterSpacing: '0.01em',
             }}>
-              Think about the three words: Truth, Beauty, and Goodness. What words, phrases, or concepts do you associate with each of these? Type in your words or phrases. Each will be placed outside the diagram. Move them around based on how much they relate (or don&apos;t relate) to the main three concepts and to each other.
+              {t.instruction}
             </p>
           </div>
 
@@ -334,7 +397,7 @@ export default function Page() {
         </div>
       </div>
 
-      {/* Form — proportionally larger on presentation screens */}
+      {/* Form */}
       <form
         onSubmit={addChip}
         style={{
@@ -352,7 +415,7 @@ export default function Page() {
         <input
           value={input}
           onChange={e => setInput(e.target.value)}
-          placeholder="Add a word or phrase…"
+          placeholder={t.placeholder}
           style={{
             flex: '1 1 160px',
             minWidth: 0,
@@ -384,7 +447,7 @@ export default function Page() {
             WebkitTapHighlightColor: 'transparent',
           }}
         >
-          Add
+          {t.add}
         </button>
         <button
           type="button"
@@ -403,7 +466,7 @@ export default function Page() {
             transition: 'color 0.15s, border-color 0.15s',
           }}
         >
-          Undo
+          {t.undo}
         </button>
         <button
           type="button"
@@ -420,7 +483,7 @@ export default function Page() {
             WebkitTapHighlightColor: 'transparent',
           }}
         >
-          Reset
+          {t.reset}
         </button>
       </form>
 
@@ -433,7 +496,7 @@ export default function Page() {
         textAlign: 'center',
         paddingInline: 16,
       }}>
-        Drag chips freely · tap × to remove
+        {t.hint}
       </p>
     </main>
   )
@@ -454,8 +517,6 @@ function ChipEl({ chip, scale, onPointerDown, onPointerMove, onPointerUp, onRemo
   const [hoverX,   setHoverX]   = useState(false)
   const [dragging, setDragging] = useState(false)
 
-  // All chip dimensions scale with the canvas so chips stay proportional
-  // at every size from MIN_SCALE (mobile) to 2.7× (4K display)
   const chipFont  = clamp( 8, Math.round( 9  * scale), 25)
   const chipPadV  = clamp( 1, Math.round( 2  * scale),  6)
   const chipPadL  = clamp( 7, Math.round( 9  * scale), 28)
@@ -475,7 +536,6 @@ function ChipEl({ chip, scale, onPointerDown, onPointerMove, onPointerUp, onRemo
         position:  'absolute',
         left:  0,
         top:   0,
-        // GPU-composited transform — smoother than animating left/top
         transform: `translate(${Math.round(chip.x * scale)}px, ${Math.round(chip.y * scale)}px)`,
         willChange: 'transform',
         display:    'flex',
@@ -491,7 +551,7 @@ function ChipEl({ chip, scale, onPointerDown, onPointerMove, onPointerUp, onRemo
         cursor:   dragging ? 'grabbing' : 'grab',
         userSelect: 'none',
         WebkitUserSelect: 'none',
-        touchAction: 'none',    // stops browser scroll-hijack during drag
+        touchAction: 'none',
         whiteSpace: 'nowrap',
         zIndex:    dragging ? 100 : 10,
         transition: 'box-shadow 0.12s',
