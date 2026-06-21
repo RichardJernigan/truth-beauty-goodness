@@ -31,7 +31,9 @@ const useIsomorphicLayoutEffect =
 const clamp = (min: number, v: number, max: number) => Math.min(max, Math.max(min, v))
 
 // ─── Translations ─────────────────────────────────────────────────────────────
-type Lang = 'en' | 'es' | 'fr' | 'pt' | 'zh' | 'nl' | 'de' | 'it' | 'ru' | 'pl' | 'ro' | 'cs' | 'fi' | 'el' | 'lt' | 'tr' | 'et' | 'da' | 'hu' | 'bg'
+type Lang = 'en' | 'es' | 'fr' | 'pt' | 'zh' | 'nl' | 'de' | 'it' | 'ru' | 'pl' | 'ro' | 'cs' | 'fi' | 'el' | 'lt' | 'tr' | 'et' | 'da' | 'hu' | 'bg' | 'he' | 'ar' | 'fa'
+
+const RTL_LANGS = new Set<Lang>(['he', 'ar', 'fa'])
 
 const LANGS: { code: Lang; label: string }[] = [
   { code: 'en', label: 'English' },
@@ -54,6 +56,9 @@ const LANGS: { code: Lang; label: string }[] = [
   { code: 'ru', label: 'Русский' },
   { code: 'es', label: 'Español' },
   { code: 'tr', label: 'Türkçe' },
+  { code: 'ar', label: 'العربية' },
+  { code: 'fa', label: 'فارسی' },
+  { code: 'he', label: 'עברית' },
 ]
 
 const T_STRINGS: Record<Lang, {
@@ -203,6 +208,27 @@ const T_STRINGS: Record<Lang, {
     add: 'Добави', undo: 'Отмени', reset: 'Нулирай',
     hint: 'Плъзгайте свободно · докоснете × за премахване',
   },
+  he: {
+    instruction: "חשבו על שלוש המילים: אמת, יופי וטוּב. אילו מילים, ביטויים או מושגים אתם מקשרים לכל אחת מהן? הקלידו את המילים או הביטויים שלכם. כל אחד יוצב מחוץ לדיאגרמה. הזיזו אותם בהתאם למידה שבה הם קשורים (או לא קשורים) לשלושת המושגים הראשיים ולאחד מהשני.",
+    truth: 'אמת', beauty: 'יופי', goodness: 'טוּב',
+    placeholder: 'הוסף מילה או ביטוי...',
+    add: 'הוסף', undo: 'בטל', reset: 'אפס',
+    hint: 'גרור בחופשיות · הקש × להסרה',
+  },
+  ar: {
+    instruction: "فكّر في الكلمات الثلاث: الحق، والجمال، والخير. ما الكلمات أو العبارات أو المفاهيم التي تربطها بكل منها؟ اكتب كلماتك أو عباراتك. سيُوضع كل منها خارج المخطط. حرّكها بحسب مدى ارتباطها (أو عدم ارتباطها) بالمفاهيم الثلاثة الرئيسية وببعضها البعض.",
+    truth: 'الحق', beauty: 'الجمال', goodness: 'الخير',
+    placeholder: 'أضف كلمة أو عبارة...',
+    add: 'أضف', undo: 'تراجع', reset: 'إعادة',
+    hint: 'اسحب بحرية · اضغط × للإزالة',
+  },
+  fa: {
+    instruction: "به سه کلمه فکر کنید: حقیقت، زیبایی و خوبی. چه کلمات، عبارات یا مفاهیمی را با هر یک از آن‌ها مرتبط می‌دانید؟ کلمات یا عبارات خود را بنویسید. هر کدام خارج از نمودار قرار می‌گیرند. آن‌ها را بر اساس میزان ارتباطشان (یا عدم ارتباط) با سه مفهوم اصلی و با یکدیگر جابجا کنید.",
+    truth: 'حقیقت', beauty: 'زیبایی', goodness: 'خوبی',
+    placeholder: 'یک کلمه یا عبارت اضافه کنید...',
+    add: 'افزودن', undo: 'واگرد', reset: 'بازنشانی',
+    hint: 'آزادانه بکشید · × را لمس کنید تا حذف شود',
+  },
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -225,6 +251,7 @@ export default function Page() {
   const scaleRef = useRef(scale)
 
   const t = T_STRINGS[lang]
+  const isRtl = RTL_LANGS.has(lang)
 
   useEffect(() => { canvasRef.current?.focus() }, [])
 
@@ -484,6 +511,7 @@ export default function Page() {
 
           {/* Instruction text — sits in the 218 design-unit space above the circles */}
           <div
+            dir={isRtl ? 'rtl' : 'ltr'}
             style={{
               position: 'absolute',
               top: 0,
@@ -528,6 +556,7 @@ export default function Page() {
       {/* Form */}
       <form
         onSubmit={addChip}
+        dir={isRtl ? 'rtl' : 'ltr'}
         style={{
           marginTop: Math.round(20 * Math.min(scale, 1.5)),
           display: 'flex',
@@ -615,7 +644,7 @@ export default function Page() {
         </button>
       </form>
 
-      <p style={{
+      <p dir={isRtl ? 'rtl' : 'ltr'} style={{
         marginTop: Math.round(14 * Math.min(scale, 1.5)),
         fontSize: hintSize,
         color: '#ccc',
