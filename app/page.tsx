@@ -31,13 +31,29 @@ const useIsomorphicLayoutEffect =
 const clamp = (min: number, v: number, max: number) => Math.min(max, Math.max(min, v))
 
 // ─── Translations ─────────────────────────────────────────────────────────────
-type Lang = 'en' | 'es' | 'fr' | 'pt'
+type Lang = 'en' | 'es' | 'fr' | 'pt' | 'zh' | 'nl' | 'de' | 'it' | 'ru' | 'pl' | 'ro' | 'cs' | 'fi' | 'el' | 'lt' | 'tr' | 'et' | 'da' | 'hu' | 'bg'
 
 const LANGS: { code: Lang; label: string }[] = [
   { code: 'en', label: 'English' },
-  { code: 'es', label: 'Español' },
+  { code: 'bg', label: 'Български' },
+  { code: 'zh', label: '中文' },
+  { code: 'cs', label: 'Čeština' },
+  { code: 'da', label: 'Dansk' },
+  { code: 'nl', label: 'Nederlands' },
+  { code: 'et', label: 'Eesti' },
+  { code: 'fi', label: 'Suomi' },
   { code: 'fr', label: 'Français' },
+  { code: 'de', label: 'Deutsch' },
+  { code: 'el', label: 'Ελληνικά' },
+  { code: 'hu', label: 'Magyar' },
+  { code: 'it', label: 'Italiano' },
+  { code: 'lt', label: 'Lietuvių' },
+  { code: 'pl', label: 'Polski' },
   { code: 'pt', label: 'Português' },
+  { code: 'ro', label: 'Română' },
+  { code: 'ru', label: 'Русский' },
+  { code: 'es', label: 'Español' },
+  { code: 'tr', label: 'Türkçe' },
 ]
 
 const T_STRINGS: Record<Lang, {
@@ -74,6 +90,118 @@ const T_STRINGS: Record<Lang, {
     placeholder: 'Adicione uma palavra ou frase...',
     add: 'Adicionar', undo: 'Desfazer', reset: 'Redefinir',
     hint: 'Arraste livremente · toque × para remover',
+  },
+  zh: {
+    instruction: "想想这三个词：真、美、善。你把哪些词语、短语或概念与它们联系在一起？输入你的词语或短语，每个词将被放在图表外面。根据它们与这三个主要概念以及彼此之间的关联程度来移动它们。",
+    truth: '真', beauty: '美', goodness: '善',
+    placeholder: '添加一个词或短语...',
+    add: '添加', undo: '撤销', reset: '重置',
+    hint: '自由拖动 · 点击 × 删除',
+  },
+  nl: {
+    instruction: "Denk aan de drie woorden: Waarheid, Schoonheid en Goedheid. Welke woorden, zinnen of concepten associeer je met elk ervan? Typ je woorden of zinnen. Elk woord wordt buiten het diagram geplaatst. Verplaats ze op basis van hoe sterk ze verband houden (of niet) met de drie hoofdconcepten en met elkaar.",
+    truth: 'WAARHEID', beauty: 'SCHOONHEID', goodness: 'GOEDHEID',
+    placeholder: 'Voeg een woord of zin toe...',
+    add: 'Toevoegen', undo: 'Ongedaan', reset: 'Opnieuw',
+    hint: 'Vrij slepen · tik × om te verwijderen',
+  },
+  de: {
+    instruction: "Denke an die drei Wörter: Wahrheit, Schönheit und Güte. Welche Wörter, Sätze oder Konzepte verbindest du mit jedem davon? Tippe deine Wörter oder Sätze ein. Jedes wird außerhalb des Diagramms platziert. Verschiebe sie je nachdem, wie stark sie mit den drei Hauptkonzepten und miteinander in Beziehung stehen.",
+    truth: 'WAHRHEIT', beauty: 'SCHÖNHEIT', goodness: 'GÜTE',
+    placeholder: 'Ein Wort oder eine Phrase hinzufügen...',
+    add: 'Hinzufügen', undo: 'Rückgängig', reset: 'Zurücksetzen',
+    hint: 'Frei ziehen · × tippen zum Entfernen',
+  },
+  it: {
+    instruction: "Pensa alle tre parole: Verità, Bellezza e Bontà. Quali parole, frasi o concetti associ a ciascuna di esse? Digita le tue parole o frasi. Ognuna sarà posizionata fuori dal diagramma. Spostale in base a quanto si relazionano (o meno) con i tre concetti principali e tra loro.",
+    truth: 'VERITÀ', beauty: 'BELLEZZA', goodness: 'BONTÀ',
+    placeholder: 'Aggiungi una parola o una frase...',
+    add: 'Aggiungi', undo: 'Annulla', reset: 'Reimposta',
+    hint: 'Trascina liberamente · tocca × per rimuovere',
+  },
+  ru: {
+    instruction: "Подумайте о трёх словах: Истина, Красота и Благость. Какие слова, фразы или понятия вы связываете с каждым из них? Введите свои слова или фразы. Каждое будет размещено за пределами диаграммы. Перемещайте их в зависимости от того, насколько они связаны (или нет) с тремя основными понятиями и друг с другом.",
+    truth: 'ИСТИНА', beauty: 'КРАСОТА', goodness: 'БЛАГОСТЬ',
+    placeholder: 'Добавьте слово или фразу...',
+    add: 'Добавить', undo: 'Отменить', reset: 'Сбросить',
+    hint: 'Перетаскивайте свободно · нажмите × для удаления',
+  },
+  pl: {
+    instruction: "Pomyśl o trzech słowach: Prawda, Piękno i Dobroć. Jakie słowa, frazy lub pojęcia kojarzysz z każdym z nich? Wpisz swoje słowa lub frazy. Każde zostanie umieszczone poza diagramem. Przenoś je w zależności od tego, jak bardzo odnoszą się (lub nie) do trzech głównych pojęć i do siebie nawzajem.",
+    truth: 'PRAWDA', beauty: 'PIĘKNO', goodness: 'DOBROĆ',
+    placeholder: 'Dodaj słowo lub frazę...',
+    add: 'Dodaj', undo: 'Cofnij', reset: 'Resetuj',
+    hint: 'Przeciągaj swobodnie · dotknij × aby usunąć',
+  },
+  ro: {
+    instruction: "Gândește-te la cele trei cuvinte: Adevăr, Frumusețe și Bunătate. Ce cuvinte, fraze sau concepte asociezi cu fiecare dintre ele? Scrie cuvintele sau frazele tale. Fiecare va fi plasată în afara diagramei. Mută-le în funcție de cât de mult se raportează (sau nu) la cele trei concepte principale și între ele.",
+    truth: 'ADEVĂR', beauty: 'FRUMUSEȚE', goodness: 'BUNĂTATE',
+    placeholder: 'Adaugă un cuvânt sau o frază...',
+    add: 'Adaugă', undo: 'Anulează', reset: 'Resetează',
+    hint: 'Trage liber · atinge × pentru a elimina',
+  },
+  cs: {
+    instruction: "Zamyslete se nad třemi slovy: Pravda, Krása a Laskavost. Jaká slova, fráze nebo pojmy spojujete s každým z nich? Napište svá slova nebo fráze. Každé bude umístěno mimo diagram. Přesouvejte je podle toho, jak moc se vztahují (nebo nevztahují) ke třem hlavním pojmům a k sobě navzájem.",
+    truth: 'PRAVDA', beauty: 'KRÁSA', goodness: 'LASKAVOST',
+    placeholder: 'Přidejte slovo nebo frázi...',
+    add: 'Přidat', undo: 'Zpět', reset: 'Resetovat',
+    hint: 'Volně přetahujte · klepněte × pro odebrání',
+  },
+  fi: {
+    instruction: "Mieti kolmea sanaa: Totuus, Kauneus ja Hyvyys. Mitä sanoja, lauseita tai käsitteitä yhdistät kuhunkin niistä? Kirjoita sanasi tai lauseesi. Jokainen sijoitetaan kaavion ulkopuolelle. Siirrä niitä sen mukaan, miten paljon ne liittyvät (tai eivät liity) kolmeen pääkäsitteeseen ja toisiinsa.",
+    truth: 'TOTUUS', beauty: 'KAUNEUS', goodness: 'HYVYYS',
+    placeholder: 'Lisää sana tai lause...',
+    add: 'Lisää', undo: 'Kumoa', reset: 'Nollaa',
+    hint: 'Vedä vapaasti · napauta × poistaaksesi',
+  },
+  el: {
+    instruction: "Σκεφτείτε τις τρεις λέξεις: Αλήθεια, Ομορφιά και Καλοσύνη. Ποιες λέξεις, φράσεις ή έννοιες συνδέετε με καθεμία από αυτές; Πληκτρολογήστε τις λέξεις ή φράσεις σας. Κάθε μία θα τοποθετηθεί έξω από το διάγραμμα. Μετακινήστε τις ανάλογα με το πόσο σχετίζονται (ή όχι) με τις τρεις κύριες έννοιες και μεταξύ τους.",
+    truth: 'ΑΛΉΘΕΙΑ', beauty: 'ΟΜΟΡΦΙΆ', goodness: 'ΚΑΛΟΣΎΝΗ',
+    placeholder: 'Προσθέστε μια λέξη ή φράση...',
+    add: 'Προσθήκη', undo: 'Αναίρεση', reset: 'Επαναφορά',
+    hint: 'Σύρετε ελεύθερα · πατήστε × για κατάργηση',
+  },
+  lt: {
+    instruction: "Pagalvokite apie tris žodžius: Tiesa, Grožis ir Gėris. Kokius žodžius, frazes ar sąvokas siejate su kiekvienu iš jų? Įveskite savo žodžius ar frazes. Kiekvienas bus patalpintas už diagramos ribų. Judinkite juos pagal tai, kiek jie susiję (ar nesusiję) su trimis pagrindinėmis sąvokomis ir tarpusavyje.",
+    truth: 'TIESA', beauty: 'GROŽIS', goodness: 'GĖRIS',
+    placeholder: 'Pridėkite žodį ar frazę...',
+    add: 'Pridėti', undo: 'Atšaukti', reset: 'Atstatyti',
+    hint: 'Vilkite laisvai · bakstelėkite × norėdami pašalinti',
+  },
+  tr: {
+    instruction: "Üç kelimeyi düşünün: Gerçek, Güzellik ve İyilik. Bu kelimelerden her biriyle hangi sözcükleri, ifadeleri veya kavramları ilişkilendiriyorsunuz? Kelimelerinizi veya ifadelerinizi yazın. Her biri diyagramın dışına yerleştirilecek. Üç ana kavramla ve birbirleriyle ne kadar ilişkili olduklarına göre taşıyın.",
+    truth: 'GERÇEK', beauty: 'GÜZELLİK', goodness: 'İYİLİK',
+    placeholder: 'Bir kelime veya ifade ekleyin...',
+    add: 'Ekle', undo: 'Geri Al', reset: 'Sıfırla',
+    hint: 'Özgürce sürükleyin · × ile kaldırın',
+  },
+  et: {
+    instruction: "Mõelge kolmele sõnale: Tõde, Ilu ja Headus. Milliseid sõnu, fraase või mõisteid seostate igaühega neist? Sisestage oma sõnad või fraasid. Iga sõna paigutatakse diagrammist välja. Liigutage neid vastavalt sellele, kui palju need seostuvad (või ei seostu) kolme põhimõistega ja üksteisega.",
+    truth: 'TÕDE', beauty: 'ILU', goodness: 'HEADUS',
+    placeholder: 'Lisa sõna või fraas...',
+    add: 'Lisa', undo: 'Võta tagasi', reset: 'Lähtesta',
+    hint: 'Lohista vabalt · puuduta × eemaldamiseks',
+  },
+  da: {
+    instruction: "Tænk på de tre ord: Sandhed, Skønhed og Godhed. Hvilke ord, sætninger eller begreber forbinder du med hver af dem? Skriv dine ord eller sætninger. Hvert ord placeres uden for diagrammet. Flyt dem rundt baseret på, hvor meget de relaterer (eller ikke relaterer) til de tre hovedbegreber og til hinanden.",
+    truth: 'SANDHED', beauty: 'SKØNHED', goodness: 'GODHED',
+    placeholder: 'Tilføj et ord eller en sætning...',
+    add: 'Tilføj', undo: 'Fortryd', reset: 'Nulstil',
+    hint: 'Træk frit · tryk × for at fjerne',
+  },
+  hu: {
+    instruction: "Gondolj a három szóra: Igazság, Szépség és Jóság. Milyen szavakat, kifejezéseket vagy fogalmakat társítasz mindegyikhez? Írd be szavaidat vagy kifejezéseidet. Mindegyik a diagram kívülére kerül. Mozgasd őket aszerint, hogy mennyire kapcsolódnak (vagy nem kapcsolódnak) a három fő fogalomhoz és egymáshoz.",
+    truth: 'IGAZSÁG', beauty: 'SZÉPSÉG', goodness: 'JÓSÁG',
+    placeholder: 'Adj hozzá egy szót vagy kifejezést...',
+    add: 'Hozzáad', undo: 'Visszavon', reset: 'Visszaállít',
+    hint: 'Húzd szabadon · érintsd × az eltávolításhoz',
+  },
+  bg: {
+    instruction: "Помислете за трите думи: Истина, Красота и Добродетел. Какви думи, фрази или понятия свързвате с всяка от тях? Въведете вашите думи или фрази. Всяка ще бъде поставена извън диаграмата. Местете ги според това, доколко се свързват (или не) с трите основни понятия и помежду си.",
+    truth: 'ИСТИНА', beauty: 'КРАСОТА', goodness: 'ДОБРОДЕТЕЛ',
+    placeholder: 'Добавете дума или фраза...',
+    add: 'Добави', undo: 'Отмени', reset: 'Нулирай',
+    hint: 'Плъзгайте свободно · докоснете × за премахване',
   },
 }
 
