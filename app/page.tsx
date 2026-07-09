@@ -663,6 +663,15 @@ export default function Page() {
       }}>
         {t.hint}
       </p>
+      <p style={{
+        fontSize: 11,
+        color: '#a0a0a0',
+        textAlign: 'center',
+        marginTop: 12,
+        userSelect: 'none',
+      }}>
+        © 2026 Richard Jernigan. All rights reserved.
+      </p>
     </main>
   )
 }
