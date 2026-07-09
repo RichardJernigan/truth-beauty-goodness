@@ -31,7 +31,7 @@ const useIsomorphicLayoutEffect =
 const clamp = (min: number, v: number, max: number) => Math.min(max, Math.max(min, v))
 
 // ─── Translations ─────────────────────────────────────────────────────────────
-type Lang = 'en' | 'es' | 'fr' | 'pt' | 'zh' | 'nl' | 'de' | 'it' | 'ru' | 'pl' | 'ro' | 'cs' | 'fi' | 'el' | 'lt' | 'tr' | 'et' | 'da' | 'hu' | 'bg' | 'he' | 'ar' | 'fa' | 'ko' | 'ja'
+type Lang = 'en' | 'es' | 'fr' | 'pt' | 'zh' | 'nl' | 'de' | 'it' | 'ru' | 'pl' | 'ro' | 'cs' | 'fi' | 'el' | 'lt' | 'tr' | 'et' | 'da' | 'hu' | 'bg' | 'he' | 'ar' | 'fa' | 'ko' | 'ja' | 'vi'
 
 const RTL_LANGS = new Set<Lang>(['he', 'ar', 'fa'])
 
@@ -60,6 +60,7 @@ const LANGS: { code: Lang; label: string }[] = [
   { code: 'fa', label: 'فارسی' },
   { code: 'he', label: 'עברית' },
   { code: 'ja', label: '日本語' },
+  { code: 'vi', label: 'Tiếng Việt' },
   { code: 'ko', label: '한국어' },
 ]
 
@@ -230,6 +231,13 @@ const T_STRINGS: Record<Lang, {
     placeholder: 'یک کلمه یا عبارت اضافه کنید...',
     add: 'افزودن', undo: 'واگرد', reset: 'بازنشانی',
     hint: 'آزادانه بکشید · × را لمس کنید تا حذف شود',
+  },
+  vi: {
+    instruction: "Hãy suy nghĩ về ba từ: Chân lý, Vẻ đẹp và Điều thiện. Bạn liên tưởng đến những từ, cụm từ hoặc khái niệm nào với mỗi từ đó? Hãy nhập các từ hoặc cụm từ của bạn. Mỗi từ sẽ được đặt bên ngoài sơ đồ. Di chuyển chúng dựa trên mức độ liên quan (hoặc không liên quan) với ba khái niệm chính và với nhau.",
+    truth: 'Chân lý', beauty: 'Vẻ đẹp', goodness: 'Điều thiện',
+    placeholder: 'Nhập một từ hoặc cụm từ...',
+    add: 'Thêm', undo: 'Hoàn tác', reset: 'Đặt lại',
+    hint: 'Kéo tự do · nhấn × để xóa',
   },
   ja: {
     instruction: "「真理」「美しさ」「善」の三つの言葉について考えてみましょう。それぞれの言葉からどんな単語、フレーズ、概念を連想しますか？思い浮かんだ言葉やフレーズを入力してください。入力した内容は図の外側に配置されます。三つの主要な概念との関連度（または非関連度）をもとに、自由に位置を調整してみましょう。",
