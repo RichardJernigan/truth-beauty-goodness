@@ -655,7 +655,7 @@ export default function Page() {
       <p dir={isRtl ? 'rtl' : 'ltr'} style={{
         marginTop: Math.round(14 * Math.min(scale, 1.5)),
         fontSize: hintSize,
-        color: '#ccc',
+        color: '#a0a0a0',
         letterSpacing: '0.05em',
         userSelect: 'none',
         textAlign: 'center',
