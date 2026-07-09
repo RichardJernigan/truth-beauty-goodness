@@ -31,7 +31,7 @@ const useIsomorphicLayoutEffect =
 const clamp = (min: number, v: number, max: number) => Math.min(max, Math.max(min, v))
 
 // ─── Translations ─────────────────────────────────────────────────────────────
-type Lang = 'en' | 'es' | 'fr' | 'pt' | 'zh' | 'nl' | 'de' | 'it' | 'ru' | 'pl' | 'ro' | 'cs' | 'fi' | 'el' | 'lt' | 'tr' | 'et' | 'da' | 'hu' | 'bg' | 'he' | 'ar' | 'fa' | 'ko'
+type Lang = 'en' | 'es' | 'fr' | 'pt' | 'zh' | 'nl' | 'de' | 'it' | 'ru' | 'pl' | 'ro' | 'cs' | 'fi' | 'el' | 'lt' | 'tr' | 'et' | 'da' | 'hu' | 'bg' | 'he' | 'ar' | 'fa' | 'ko' | 'ja'
 
 const RTL_LANGS = new Set<Lang>(['he', 'ar', 'fa'])
 
@@ -59,6 +59,7 @@ const LANGS: { code: Lang; label: string }[] = [
   { code: 'ar', label: 'العربية' },
   { code: 'fa', label: 'فارسی' },
   { code: 'he', label: 'עברית' },
+  { code: 'ja', label: '日本語' },
   { code: 'ko', label: '한국어' },
 ]
 
@@ -229,6 +230,13 @@ const T_STRINGS: Record<Lang, {
     placeholder: 'یک کلمه یا عبارت اضافه کنید...',
     add: 'افزودن', undo: 'واگرد', reset: 'بازنشانی',
     hint: 'آزادانه بکشید · × را لمس کنید تا حذف شود',
+  },
+  ja: {
+    instruction: "「真理」「美しさ」「善」の三つの言葉について考えてみましょう。それぞれの言葉からどんな単語、フレーズ、概念を連想しますか？思い浮かんだ言葉やフレーズを入力してください。入力した内容は図の外側に配置されます。三つの主要な概念との関連度（または非関連度）をもとに、自由に位置を調整してみましょう。",
+    truth: '真理', beauty: '美しさ', goodness: '善',
+    placeholder: '単語やフレーズを入力…',
+    add: '追加', undo: '元に戻す', reset: 'リセット',
+    hint: '自由にドラッグ · × で削除',
   },
   ko: {
     instruction: "진리, 아름다움, 선, 이 세 단어를 생각해 보세요. 각각의 단어에서 어떤 단어, 구절, 또는 개념이 떠오르나요? 떠오르는 단어나 구절을 입력해 보세요. 입력한 내용은 다이어그램 밖에 배치됩니다. 세 가지 핵심 개념과의 연관성(또는 비연관성)을 바탕으로 자유롭게 위치를 조정해 보세요.",
